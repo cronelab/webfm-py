@@ -8,11 +8,8 @@ import os
 
 import imageio
 
-webfm_geometry_url = 'http://localhost:8080/api/geometry/{0}'
-webfm_image_url = 'http://localhost:8080/api/brain/{0}'
-
 def get_geometry( subject,
-                  webfm_location = 'http://localhost:8080' ):
+                  webfm_location = 'http://cerebro.neuro.jhu.edu:8080' ):
 
     subject_geometry = None
 
@@ -24,13 +21,13 @@ def get_geometry( subject,
             subject_geometry = json.loads( contents_data.decode( 'utf-8' ) )
 
     except:
-        print( 'Could not extract geometry fur subject {0} at {1}'.format( subject, webfm_geometry_url ) )
+        print( 'Could not extract geometry for subject {0} at {1}'.format( subject, webfm_geometry_url ) )
         return None
 
     return subject_geometry
 
 def get_brain( subject,
-               webfm_location = 'http://localhost:8080' ):
+               webfm_location = 'http://cerebro.neuro.jhu.edu:8080' ):
 
     subject_brain = None
 
@@ -40,7 +37,7 @@ def get_brain( subject,
         with urllib.request.urlopen( webfm_image_url ) as contents:
             brain_raw_data = contents.read()
     except:
-        print( 'Could not extract brain fur subject {0} at {1}'.format( subject, webfm_image_url ) )
+        print( 'Could not extract brain for subject {0} at {1}'.format( subject, webfm_image_url ) )
         return None
 
     # Identify which image format we're using
@@ -58,4 +55,32 @@ def get_brain( subject,
 
     return subject_brain
 
-#
+def get_record(subject,
+                task,
+                webfm_location = 'http://cerebro.neuro.jhu.edu:8080'):
+
+    webfm_record_url = '{0}/api/data/{1}/{2}'.format(webfm_location,subject,task)    
+    
+    numChannels = len(urllib.request.urlopen(webfm_record_url).read().split(b'{')[3].split(b'"'))-7
+
+    channelArray=[]
+    dataArray=[]
+    for i in range(1,numChannels):
+        if(i%2==1):
+            channelArray.append(urllib.request.urlopen(webfm_record_url).read().split(b'{')[3].split(b'"')[i].decode("utf-8"))
+            print(channelArray)
+        elif(i%2==0):
+            splitString = urllib.request.urlopen(webfm_record_url).read().split(b'{')[3].split(b'"')[i].split(b':')[1].decode("utf-8").replace('[',"")
+            print(splitString)
+            if(splitString[len(splitString)-2] =="}"):
+                finalString = splitString.replace(']},',"").split(',')
+            else:
+                finalString = splitString.replace('],',"").split(',')
+
+            results = list(map(float, finalString))
+            print(results)
+            dataArray.append(results)
+            
+    return dataArray,channelArray
+    
+    
